@@ -3,9 +3,10 @@ import Product from "../models/productModel.js";
 
 const addProduct = asyncHandler(async (req, res) => {
   try {
-    const { name, description, price, category, quantity, brand } = req.fields;
+    // FIX 1: Destructure all fields, including 'image'
+    const { name, description, price, category, quantity, brand, image } = req.fields;
 
-    // Validation
+    // FIX 2: Add validation for 'image' and other fields
     switch (true) {
       case !name:
         return res.json({ error: "Name is required" });
@@ -19,9 +20,12 @@ const addProduct = asyncHandler(async (req, res) => {
         return res.json({ error: "Category is required" });
       case !quantity:
         return res.json({ error: "Quantity is required" });
+      case !image:
+        return res.json({ error: "Image is required" });
     }
 
-    const product = new Product({ ...req.fields });
+    // FIX 3: Sync countInStock with quantity
+    const product = new Product({ ...req.fields, countInStock: quantity });
     await product.save();
     res.json(product);
   } catch (error) {
@@ -32,7 +36,7 @@ const addProduct = asyncHandler(async (req, res) => {
 
 const updateProductDetails = asyncHandler(async (req, res) => {
   try {
-    const { name, description, price, category, quantity, brand } = req.fields;
+    const { name, description, price, category, quantity, brand, image } = req.fields;
 
     // Validation
     switch (true) {
@@ -48,11 +52,13 @@ const updateProductDetails = asyncHandler(async (req, res) => {
         return res.json({ error: "Category is required" });
       case !quantity:
         return res.json({ error: "Quantity is required" });
+      case !image:
+        return res.json({ error: "Image is required" });
     }
 
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      { ...req.fields },
+      { ...req.fields, countInStock: quantity }, // Update countInStock as well
       { new: true }
     );
 
@@ -123,7 +129,7 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
     const products = await Product.find({})
       .populate("category")
       .limit(12)
-      .sort({ createAt: -1 });
+      .sort({ createdAt: -1 }); // FIX 4: Corrected Typo (createAt -> createdAt)
 
     res.json(products);
   } catch (error) {

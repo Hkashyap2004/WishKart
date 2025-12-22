@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Import useEffect
 import { useNavigate } from "react-router-dom";
 import {
   useCreateProductMutation,
@@ -24,6 +24,15 @@ const ProductList = () => {
   const [createProduct] = useCreateProductMutation();
   const { data: categories } = useFetchCategoriesQuery();
 
+  // FIX: Automatically select the first category if none is selected
+  // This prevents the "Category is required" error even when the dropdown shows a value
+  useEffect(() => {
+     if (categories && categories.length > 0 && !category) {
+       setCategory(categories[0]._id); 
+     }
+  }, [categories, category]);
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -41,7 +50,8 @@ const ProductList = () => {
       const { data } = await createProduct(productData);
 
       if (data.error) {
-        toast.error("Product create failed. Try Again.");
+        // FIX: Show the REAL error message from the backend
+        toast.error(data.error);
       } else {
         toast.success(`${data.name} is created`);
         navigate("/");
@@ -85,7 +95,8 @@ const ProductList = () => {
 
           <div className="mb-3">
             <label className="border text-white px-4 block w-full text-center rounded-lg cursor-pointer font-bold py-11">
-              {image ? image.name : "Upload Image"}
+              {/* FIX: Show text when image is uploaded */}
+              {image ? "Image Uploaded" : "Upload Image"}
 
               <input
                 type="file"
@@ -166,7 +177,10 @@ const ProductList = () => {
                   placeholder="Choose Category"
                   className="p-4 mb-3 w-[30rem] border rounded-lg bg-[#101011] text-white"
                   onChange={(e) => setCategory(e.target.value)}
+                  value={category} // FIX: Control the value
                 >
+                  {/* FIX: Add a default placeholder if categories are loading or empty */}
+                  <option value="" disabled>Select Category</option>
                   {categories?.map((c) => (
                     <option key={c._id} value={c._id}>
                       {c.name}
